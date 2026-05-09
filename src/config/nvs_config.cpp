@@ -11,6 +11,7 @@
 #include <board_config.h>
 #include "nvs_config.h"
 #include "../stratum/stratum_types.h"
+#include <startup_config.h>
 
 // SD card support - use SD_MMC for ESP32-S3 CYD, SPI SD for others
 // Headless boards don't have SD card support
@@ -429,7 +430,11 @@ void nvs_config_init() {
     delay(100);
 
     // Initialize with defaults first
-    nvs_config_reset(&s_config);
+#if USE_STARTUP_CONFIG != 0
+    nvs_config_set_user_values(&s_config);  // Loaded from the values in the firmware
+#else
+    nvs_config_reset(&s_config);            // Reset values
+#endif
 
     bool loadedFromSd = false;
     bool loadedFromNvs = false;
@@ -588,6 +593,52 @@ void nvs_config_reset(miner_config_t *config) {
 
     config->checksum = 0;  // Will be calculated on save
 }
+
+
+void nvs_config_set_user_values(miner_config_t *config) {
+    memset(config, 0, sizeof(miner_config_t));
+
+    // WiFi defaults (empty - will use captive portal)
+    safeStrCpy( config->ssid, STARTUP_CONFIG_WIFI_SSID, sizeof(config->ssid));
+    safeStrCpy( config->wifiPassword, STARTUP_CONFIG_WIFI_PWD, sizeof(config->wifiPassword));
+
+    // Primary pool defaults
+    safeStrCpy(config->poolUrl, DEFAULT_POOL_URL, sizeof(config->poolUrl));
+    config->poolPort = DEFAULT_POOL_PORT;
+    safeStrCpy(config->poolPassword, DEFAULT_POOL_PASS, sizeof(config->poolPassword));
+    safeStrCpy(config->wallet, STARTUP_CONFIG_USER_WALLET, sizeof(config->wallet) );
+
+    // Backup pool defaults
+    safeStrCpy(config->backupPoolUrl, BACKUP_POOL_URL, sizeof(config->backupPoolUrl));
+    config->backupPoolPort = BACKUP_POOL_PORT;
+    safeStrCpy(config->backupPoolPassword, DEFAULT_POOL_PASS, sizeof(config->backupPoolPassword));
+    safeStrCpy(config->backupWallet, STARTUP_CONFIG_BACKUP_WALLET, sizeof(config->backupWallet));
+
+    // Display defaults
+    config->brightness = 100;
+    config->screenTimeout = STARTUP_CONFIG_SCREEN_TIMEOUT_s;  // Never timeout
+    config->rotation = 0;       // Portrait USB Top (default)
+    config->displayEnabled = true;
+    config->invertColors = true;   // Dark theme (default) - CYD panel is inverted, so invertDisplay(true) = dark
+    config->timezoneOffset = STARTUP_CONFIG_TIME_ZONE_OFFSET;    // UTC+0 default
+
+    // Miner defaults
+    safeStrCpy(config->workerName, "SparkMiner", sizeof(config->workerName));
+    config->targetDifficulty = DESIRED_DIFFICULTY;
+
+    // Stats API defaults - enabled but no external fetch by default
+#if STARTUP_CONFIG_STATS_ENABLE != 0
+    config->statsEnabled = true;      // Live stats enabled
+#else
+    config->statsEnabled = false;
+#endif
+    config->statsApiUrl[0] = '\0';    // No custom API endpoint
+    config->statsProxyUrl[0] = '\0';  // No proxy by default
+    config->enableHttpsStats = false; // Direct HTTPS disabled (causes WDT crashes)
+
+    config->checksum = 0;  // Will be calculated on save
+}
+
 
 miner_config_t* nvs_config_get() {
     if (!s_initialized) {
