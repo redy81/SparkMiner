@@ -255,6 +255,8 @@ void monitor_task(void *param) {
 
             // Also print to serial for headless/debug
             static uint32_t lastSerialPrint = 0;
+
+#if DISABLE_SERIAL_DEBUG_UPDATES !=1
             if (now - lastSerialPrint >= 10000) {
                 Serial.printf("[STATS] Hashrate: %.2f H/s | Shares: %u/%u | Ping: %u ms | Best: %.4f\n",
                     displayData.hashRate,
@@ -300,6 +302,7 @@ void monitor_task(void *param) {
 
                 lastSerialPrint = now;
             }
+#endif
 
             s_lastDisplayUpdate = now;
         }

@@ -77,11 +77,11 @@ static bool s_inverted = false;
 
 static String formatHashrateCompact(double hashrate) {
     if (hashrate >= 1e9) {
-        return String(hashrate / 1e9, 1) + "G";
+        return String(hashrate / 1e9, 1) + " G";
     } else if (hashrate >= 1e6) {
-        return String(hashrate / 1e6, 1) + "M";
+        return String(hashrate / 1e6, 1) + " M";
     } else if (hashrate >= 1e3) {
-        return String(hashrate / 1e3, 1) + "K";
+        return String(hashrate / 1e3, 1) + " K";
     } else {
         return String((int)hashrate);
     }
@@ -91,25 +91,28 @@ static String formatUptimeCompact(uint32_t seconds) {
     uint32_t days = seconds / 86400;
     uint32_t hours = (seconds % 86400) / 3600;
     uint32_t mins = (seconds % 3600) / 60;
+    uint32_t secs = seconds % 60;
 
     if (days > 0) {
-        return String(days) + "d" + String(hours) + "h";
+        return String(days) + "d " + String(hours) + "h";
     } else if (hours > 0) {
-        return String(hours) + "h" + String(mins) + "m";
+        return String(hours) + "h " + String(mins) + "m";
     } else {
-        return String(mins) + "m";
+        return String(mins) + "m " + String(secs) + "s";
     }
 }
 
 static String formatDiffCompact(double diff) {
     if (diff >= 1e12) {
-        return String(diff / 1e12, 1) + "T";
+        return String(diff / 1e12, 1) + " T";
     } else if (diff >= 1e9) {
-        return String(diff / 1e9, 1) + "G";
+        return String(diff / 1e9, 1) + " G";
     } else if (diff >= 1e6) {
-        return String(diff / 1e6, 1) + "M";
+        return String(diff / 1e6, 1) + " M";
+    } else if (diff >= 1e4) {
+        return String(diff / 1e3, 1) + " k";
     } else if (diff >= 1e3) {
-        return String(diff / 1e3, 1) + "K";
+        return String(diff / 1e3, 2) + " k";
     } else {
         return String((int)diff);
     }
@@ -148,7 +151,9 @@ static void drawMainScreen(const display_data_t *data) {
     s_u8g2.drawHLine(0, 10, OLED_WIDTH);
 
     // Large hashrate display
-    s_u8g2.setFont(u8g2_font_logisoso16_tn);  // Large numeric font
+    //s_u8g2.setFont(u8g2_font_logisoso16_tn);  // Large numeric font
+    s_u8g2.setFont(u8g2_font_profont17_tr);  // This text has also a letter...
+   
     String hashrate = formatHashrateCompact(data->hashRate);
     int hrWidth = s_u8g2.getStrWidth(hashrate.c_str());
     s_u8g2.drawStr((OLED_WIDTH - hrWidth) / 2, 32, hashrate.c_str());
@@ -497,8 +502,23 @@ void display_show_reset_complete() {
     oled_display_show_reset_complete();
 }
 
-void display_set_backlight_off() {}
-void display_set_backlight_on() {}
-bool display_is_backlight_off() { return false; }
+bool screenOff = false;
+
+void display_set_backlight_off() 
+{
+    s_u8g2.sleepOn();
+    screenOff = true;
+}
+
+void display_set_backlight_on() 
+{
+    s_u8g2.sleepOff();
+    screenOff = false;
+}
+
+bool display_is_backlight_off() 
+{ 
+    return screenOff; 
+}
 
 #endif // USE_OLED_DISPLAY

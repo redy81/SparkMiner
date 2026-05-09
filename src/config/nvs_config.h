@@ -104,6 +104,12 @@ bool nvs_config_save(const miner_config_t *config);
 void nvs_config_reset(miner_config_t *config);
 
 /**
+ * Reset configuration to one set in the configuration file
+ * @param config Pointer to config structure to reset
+ */
+void nvs_config_set_user_values(miner_config_t *config);
+
+/**
  * Get global configuration instance
  */
 miner_config_t* nvs_config_get();

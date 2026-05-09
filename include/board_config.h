@@ -312,6 +312,7 @@
     // Use OLED display (not TFT)
     #define USE_DISPLAY 0
     #define USE_OLED_DISPLAY 1
+    #define DISABLE_SERIAL_DEBUG_UPDATES    1
 
     // OLED configuration (128x64 SSD1306 I2C)
     #define OLED_WIDTH 128
